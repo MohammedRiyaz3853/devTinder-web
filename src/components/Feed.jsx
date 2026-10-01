@@ -4,12 +4,12 @@ import { BASE_URL } from '../utils/constants'
 import axios from 'axios'
 import { useEffect } from 'react'
 import UserCard from './UserCard'
-
-const DEFAULT_PHOTO = "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp";
+import { DEFAULT_PHOTO  } from '../utils/constants'
 
 const Feed = () => {
   const dispatch = useDispatch();
   const feed = useSelector((store) => store.feed);
+  const user = useSelector((store) => store.user); // ADD THIS
 
   const getFeed = async () => {
     try {
@@ -21,8 +21,8 @@ const Feed = () => {
   };
 
   useEffect(() => {
-    getFeed(); // always fetch on mount
-  }, []);
+    if (user) getFeed(); // ADD user check
+  }, [user]); // CHANGE [] to [user] - refetch when logged in user changes
 
   const handleSwipe = async (status, user) => {
     const userId = user._id;
@@ -35,7 +35,7 @@ const Feed = () => {
   };
 
   if (feed === null) return <div className="flex justify-center mt-20"><span className="loading loading-spinner loading-lg"></span></div>
-  
+
   if (feed.length === 0) {
     return (
       <div className="flex flex-col items-center mt-20 gap-4">
@@ -45,10 +45,11 @@ const Feed = () => {
     )
   }
 
-  
   const safeUser = {
-    ...feed[0],
-    photoUrl: feed[0]?.photoUrl || DEFAULT_PHOTO
+   ...feed[0],
+    photoUrl: feed[0]?.photoUrl &&!feed[0]?.photoUrl.includes('ongcvidesh.com')
+     ? feed[0]?.photoUrl
+      : DEFAULT_PHOTO
   };
 
   return (
