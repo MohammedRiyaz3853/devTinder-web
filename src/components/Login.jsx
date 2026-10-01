@@ -9,6 +9,7 @@ const Login = () => {
   const [showPass, setShowPass] = useState(false)
   const [email, setEmail] = useState("Virat@gmail.com")
   const [password, setPassword] = useState("Virat@123")
+  const[error,setError] = useState("")
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const handleLogin = async (e) => {
@@ -27,7 +28,8 @@ const Login = () => {
       dispatch(addUser(res.data));
       return navigate("/"); 
     } catch (err) {
-      console.error("Login failed:", err.response?.data || err.message)
+      setError(`Login failed: ${err.response?.data || err.message}`)
+      //console.log(err)
     }
   }
 
@@ -87,7 +89,7 @@ const Login = () => {
                 </button>
               </div>
             </div>
-
+            <p className='text-red-500'>{error} </p>
             <button type="submit" className="btn btn-primary w-full mt-2 " onClick = {handleLogin}>
               Login
             </button>
