@@ -1,48 +1,42 @@
-import { Outlet, useNavigate } from 'react-router-dom'
-import NavBar from './NavBar'
-import Footer from './Footer'
-import { BASE_URL } from '../utils/constants'
-import { useDispatch, useSelector } from 'react-redux'
-import { addUser } from '../utils/userSlice'
-import { useEffect, useState } from 'react'
-import axios from 'axios'
+import NavBar from "./NavBar"
+import { Outlet, useNavigate } from "react-router-dom"
+import { useEffect } from "react"
+import axios from "axios"
+import { BASE_URL } from "../utils/constants"
+import { useDispatch, useSelector } from "react-redux"
+import { addUser } from "../utils/userSlice"
 
 const Body = () => {
   const dispatch = useDispatch();
-  const userData = useSelector(store => store.user)
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const user = useSelector(store => store.user);
+
+  // Set theme on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
 
   const fetchUser = async () => {
-    if (userData) {
-      setLoading(false);
-      return;
-    }
     try {
       const res = await axios.get(BASE_URL + "/profile/view", { withCredentials: true });
-      dispatch(addUser(res.data))
+      dispatch(addUser(res.data));
     } catch (err) {
       if (err.response?.status === 401) {
         navigate("/login");
       }
-    } finally {
-      setLoading(false);
     }
-  }
+  };
 
-  useEffect(() => { fetchUser() }, [])
-
-  if (loading) return <div className="flex justify-center mt-20"><span className="loading loading-spinner loading-lg"></span></div>
+  useEffect(() => {
+    if (!user) fetchUser();
+  }, []);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen bg-base-200 text-base-content">
       <NavBar />
-      <main className="flex-grow">
-        <Outlet />
-      </main>
-      <Footer />
+      <Outlet />
     </div>
   )
 }
-
 export default Body

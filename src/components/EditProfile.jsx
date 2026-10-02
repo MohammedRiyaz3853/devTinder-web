@@ -3,12 +3,13 @@ import { useSelector, useDispatch } from 'react-redux';
 import axios from 'axios';
 import { BASE_URL, DEFAULT_PHOTO } from '../utils/constants';
 import { addUser } from '../utils/userSlice';
+import { useNavigate } from "react-router-dom";
 
 const EditProfile = () => {
   const user = useSelector((store) => store.user);
   const dispatch = useDispatch();
   const fileInputRef = useRef(null);
-
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', age: '', gender: '', about: '', skills: [], photoUrl: '',
   });
@@ -30,7 +31,7 @@ const EditProfile = () => {
         photoUrl: user.photoUrl || '',
       });
       const isDirtyLink = user.photoUrl?.includes('ongcvidesh.com');
-      setPhotoPreview(isDirtyLink ||!user.photoUrl? DEFAULT_PHOTO : user.photoUrl);
+      setPhotoPreview(isDirtyLink || !user.photoUrl ? DEFAULT_PHOTO : user.photoUrl);
     }
   }, [user]);
 
@@ -43,19 +44,19 @@ const EditProfile = () => {
   const isDirty = useMemo(() => {
     if (!user) return false;
     return (
-      formData.firstName!== (user.firstName || '') ||
-      formData.lastName!== (user.lastName || '') ||
-      String(formData.age)!== String(user.age || '') ||
-      formData.gender!== (user.gender || '') ||
-      formData.about!== (user.about || '') ||
-      JSON.stringify(formData.skills)!== JSON.stringify(user.skills || []) ||
-      photoFile!== null
+      formData.firstName !== (user.firstName || '') ||
+      formData.lastName !== (user.lastName || '') ||
+      String(formData.age) !== String(user.age || '') ||
+      formData.gender !== (user.gender || '') ||
+      formData.about !== (user.about || '') ||
+      JSON.stringify(formData.skills) !== JSON.stringify(user.skills || []) ||
+      photoFile !== null
     );
   }, [formData, user, photoFile]);
 
   const displayPhoto = photoFile
    ? photoPreview
-    : (formData.photoUrl &&!formData.photoUrl.includes('ongcvidesh.com')? formData.photoUrl : DEFAULT_PHOTO);
+    : (formData.photoUrl && !formData.photoUrl.includes('ongcvidesh.com') ? formData.photoUrl : DEFAULT_PHOTO);
 
   const previewUser = {
    ...user,
@@ -63,18 +64,17 @@ const EditProfile = () => {
     photoUrl: displayPhoto,
   };
 
-  // THIS WAS MISSING IN YOUR RUNNING FILE - ADDED BACK
   const handlePhotoChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (file.size > 10 * 1024 * 1024) {
-            setToast("Image too large, pick < 10MB");
-            return;
-        }
-        if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
-        setPhotoFile(file);
-        setPhotoPreview(URL.createObjectURL(file));
-    };
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setToast("Image too large, pick < 10MB");
+      return;
+    }
+    if (photoPreview?.startsWith('blob:')) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const handleAddSkill = (e) => {
     if (e.key === 'Enter' && skillInput.trim()) {
@@ -87,7 +87,7 @@ const EditProfile = () => {
   };
 
   const removeSkill = (skillToRemove) => {
-    setFormData({...formData, skills: formData.skills.filter(s => s!== skillToRemove) });
+    setFormData({...formData, skills: formData.skills.filter(s => s !== skillToRemove) });
   };
 
   const handleSave = async () => {
@@ -113,7 +113,10 @@ const EditProfile = () => {
       setPhotoPreview(res.data.photoUrl);
       setPhotoFile(null);
       setToast('Profile saved! ✅');
-      setTimeout(() => setToast(''), 3000);
+      setTimeout(() => {
+        setToast('');
+        navigate("/"); // AUTO GO TO FEED AFTER SAVE
+      }, 800);
     } catch (err) {
       setToast(err.response?.data?.message || 'Failed to save');
     } finally {
@@ -131,7 +134,8 @@ const EditProfile = () => {
         </div>
       )}
       <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-10 justify-center">
-        <div className="card bg-base-100 shadow-xl w-full lg:w- p-8">
+        {/* FIXED: lg:w-[520px] instead of lg:w- */}
+        <div className="card bg-base-100 shadow-xl w-full lg:w-[520px] p-8">
           <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
           <div className="flex flex-col items-center gap-4 mb-6">
             <div className="avatar">
@@ -189,16 +193,24 @@ const EditProfile = () => {
             </div>
           </div>
 
-          <button className="btn btn-primary w-full mt-8" disabled={!isDirty || isSaving} onClick={handleSave}>
-            {isSaving? <span className="loading loading-spinner"></span> : 'Save Profile'}
-          </button>
-          {!isDirty && <p className="text-xs text-center opacity-50 mt-2">Make changes to enable Save</p>}
+          {/* === NEW BUTTONS SECTION - HERE IS YOUR FIX === */}
+          <div className="flex gap-3 mt-8">
+            <button className="btn btn-primary flex-1" disabled={!isDirty || isSaving} onClick={handleSave}>
+              {isSaving ? <span className="loading loading-spinner"></span> : 'Save & Go to Feed'}
+            </button>
+            <button className="btn btn-outline flex-1" onClick={() => navigate("/")}>
+              Skip to Feed →
+            </button>
+          </div>
+          {!isDirty && <p className="text-xs text-center opacity-50 mt-2">You can edit later • Skip if you want to explore feed first</p>}
+
         </div>
 
         <div className="flex flex-col items-center">
           <h3 className="text-lg font-semibold mb-4 opacity-70">Live Preview</h3>
           <div className="card w-80 bg-base-100 shadow-xl overflow-hidden rounded-2xl">
-            <figure className="relative h-">
+            {/* FIXED: h-96 instead of h- */}
+            <figure className="relative h-96">
               <img src={displayPhoto} alt="preview" className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
               <div className="absolute bottom-0 p-5 text-white">
